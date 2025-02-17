@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -67,7 +68,7 @@ func generateClick() error {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(v))
 	}
 
-	return saveWav("assets/sounds/click.wav", samples)
+	return saveWav("click.wav", samples)
 }
 
 func generateExplosion() error {
@@ -85,7 +86,7 @@ func generateExplosion() error {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(v))
 	}
 
-	return saveWav("assets/sounds/explosion.wav", samples)
+	return saveWav("explosion.wav", samples)
 }
 
 func generateWin() error {
@@ -104,7 +105,7 @@ func generateWin() error {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(sample))
 	}
 
-	return saveWav("assets/sounds/win.wav", samples)
+	return saveWav("win.wav", samples)
 }
 
 func generateFlag() error {
@@ -118,11 +119,12 @@ func generateFlag() error {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(v))
 	}
 
-	return saveWav("assets/sounds/flag.wav", samples)
+	return saveWav("flag.wav", samples)
 }
 
 func saveWav(filename string, samples []byte) error {
-	f, err := os.Create(filename)
+	fullPath := filepath.Join("assets", "sounds", filename)
+	f, err := os.Create(fullPath)
 	if err != nil {
 		return err
 	}

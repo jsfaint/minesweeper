@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"image/png"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -56,7 +57,7 @@ func generateTile() error {
 		img.Set(tileSize-1, i, darkColor) // 右边
 	}
 
-	return saveImage(img, "assets/images/tile.png")
+	return saveImage(img, "tile.png")
 }
 
 func generateRevealed() error {
@@ -66,7 +67,7 @@ func generateRevealed() error {
 	bgColor := color.RGBA{180, 180, 180, 255}
 	draw.Draw(img, img.Bounds(), &image.Uniform{bgColor}, image.Point{}, draw.Src)
 
-	return saveImage(img, "assets/images/revealed.png")
+	return saveImage(img, "revealed.png")
 }
 
 func generateMine() error {
@@ -91,7 +92,7 @@ func generateMine() error {
 		}
 	}
 
-	return saveImage(img, "assets/images/mine.png")
+	return saveImage(img, "mine.png")
 }
 
 func generateFlag() error {
@@ -117,11 +118,12 @@ func generateFlag() error {
 		}
 	}
 
-	return saveImage(img, "assets/images/flag.png")
+	return saveImage(img, "flag.png")
 }
 
 func saveImage(img *image.RGBA, filename string) error {
-	f, err := os.Create(filename)
+	fullPath := filepath.Join("assets", "images", filename)
+	f, err := os.Create(fullPath)
 	if err != nil {
 		return err
 	}

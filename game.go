@@ -3,11 +3,14 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/color"
 	_ "image/png"
 	"math/rand"
 	"os"
 	"time"
+
+	"minesweeper/assets"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
@@ -83,51 +86,45 @@ var globalAudioContext *audio.Context
 
 func loadGameAssets() (map[string]*ebiten.Image, error) {
 	images := make(map[string]*ebiten.Image)
-	imageFiles := map[string]string{
-		"tile":     "assets/images/tile.png",
-		"mine":     "assets/images/mine.png",
-		"flag":     "assets/images/flag.png",
-		"revealed": "assets/images/revealed.png",
-	}
+	imageFiles := []string{"tile.png", "mine.png", "flag.png", "revealed.png"}
 
-	for key, path := range imageFiles {
-		img, _, err := ebitenutil.NewImageFromFile(path)
+	for _, filename := range imageFiles {
+		data, err := assets.GetImage(filename)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("加载图片失败 %s: %v", filename, err)
 		}
-		images[key] = img
+
+		img, _, err := image.Decode(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("解码图片失败 %s: %v", filename, err)
+		}
+
+		images[filename[:len(filename)-4]] = ebiten.NewImageFromImage(img)
 	}
 	return images, nil
 }
 
 func loadGameSounds(audioContext *audio.Context) (map[string]*audio.Player, error) {
 	sounds := make(map[string]*audio.Player)
-	soundFiles := map[string]string{
-		"click":     "assets/sounds/click.wav",
-		"explosion": "assets/sounds/explosion.wav",
-		"win":       "assets/sounds/win.wav",
-		"flag":      "assets/sounds/flag.wav",
-	}
+	soundFiles := []string{"click.wav", "explosion.wav", "win.wav", "flag.wav"}
 
-	for key, path := range soundFiles {
-		// 一次性读取整个文件
-		data, err := os.ReadFile(path)
+	for _, filename := range soundFiles {
+		data, err := assets.GetSound(filename)
 		if err != nil {
-			return nil, fmt.Errorf("读取音频文件失败 %s: %v", path, err)
+			return nil, fmt.Errorf("加载音效失败 %s: %v", filename, err)
 		}
 
-		// 从内存中解码
 		d, err := wav.DecodeWithSampleRate(audioContext.SampleRate(), bytes.NewReader(data))
 		if err != nil {
-			return nil, fmt.Errorf("解码音频失败 %s: %v", path, err)
+			return nil, fmt.Errorf("解码音效失败 %s: %v", filename, err)
 		}
 
 		p, err := audio.NewPlayer(audioContext, d)
 		if err != nil {
-			return nil, fmt.Errorf("创建播放器失败 %s: %v", path, err)
+			return nil, fmt.Errorf("创建播放器失败 %s: %v", filename, err)
 		}
 
-		sounds[key] = p
+		sounds[filename[:len(filename)-4]] = p
 	}
 	return sounds, nil
 }

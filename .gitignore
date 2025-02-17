@@ -1,0 +1,27 @@
+# 生成的资源文件
+assets/images/
+assets/sounds/
+
+# 编译生成的文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE 和编辑器文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go 特定文件
+go.work
+go.work.sum
+
+# 操作系统文件
+.DS_Store
+Thumbs.db 

@@ -6,6 +6,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+//go:generate go run tools/generate.go
+
 const (
 	screenWidth  = 800
 	screenHeight = 600

@@ -1,11 +1,11 @@
-package main
+package sounds
 
 import (
 	"encoding/binary"
-	"log"
 	"math"
-	"math/rand/v2"
+	"math/rand"
 	"os"
+	"time"
 )
 
 const (
@@ -30,20 +30,33 @@ type wavHeader struct {
 	Subchunk2Size uint32  // 数据大小
 }
 
-func main() {
-	os.MkdirAll("assets/sounds", 0755)
-
-	// 生成点击音效
-	generateClick()
-	// 生成爆炸音效
-	generateExplosion()
-	// 生成胜利音效
-	generateWin()
-	// 生成放置旗帜音效
-	generateFlag()
+func init() {
+	// 初始化随机数生成器
+	rand.Seed(time.Now().UnixNano())
 }
 
-func generateClick() {
+// GenerateSounds 生成所有音效
+func GenerateSounds() error {
+	// 创建目录
+	os.MkdirAll("assets/sounds", 0755)
+
+	// 生成所有音效
+	if err := generateClick(); err != nil {
+		return err
+	}
+	if err := generateExplosion(); err != nil {
+		return err
+	}
+	if err := generateWin(); err != nil {
+		return err
+	}
+	if err := generateFlag(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func generateClick() error {
 	samples := make([]byte, int(sampleRate*duration)*2)
 	frequency := 440.0 // A4音符
 
@@ -54,16 +67,17 @@ func generateClick() {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(v))
 	}
 
-	saveWav("assets/sounds/click.wav", samples)
+	return saveWav("assets/sounds/click.wav", samples)
 }
 
-func generateExplosion() {
+func generateExplosion() error {
 	samples := make([]byte, int(sampleRate*duration)*2)
 	baseFreq := 100.0
 
 	for i := 0; i < len(samples)/2; i++ {
 		t := float64(i) / sampleRate
 		amplitude := math.Exp(-t * 10.0)
+		// 使用噪声和基础频率的组合
 		noise := (rand.Float64()*2 - 1) * amplitude * 32767.0
 		freq := baseFreq * (1.0 + math.Sin(2.0*math.Pi*10.0*t)*0.5)
 		signal := math.Sin(2.0*math.Pi*freq*t) * amplitude * 32767.0
@@ -71,10 +85,10 @@ func generateExplosion() {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(v))
 	}
 
-	saveWav("assets/sounds/explosion.wav", samples)
+	return saveWav("assets/sounds/explosion.wav", samples)
 }
 
-func generateWin() {
+func generateWin() error {
 	samples := make([]byte, int(sampleRate*duration)*2)
 	frequencies := []float64{523.25, 659.25, 783.99} // C5, E5, G5
 
@@ -90,10 +104,10 @@ func generateWin() {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(sample))
 	}
 
-	saveWav("assets/sounds/win.wav", samples)
+	return saveWav("assets/sounds/win.wav", samples)
 }
 
-func generateFlag() {
+func generateFlag() error {
 	samples := make([]byte, int(sampleRate*duration)*2)
 	frequency := 880.0 // A5音符
 
@@ -104,13 +118,13 @@ func generateFlag() {
 		binary.LittleEndian.PutUint16(samples[i*2:], uint16(v))
 	}
 
-	saveWav("assets/sounds/flag.wav", samples)
+	return saveWav("assets/sounds/flag.wav", samples)
 }
 
-func saveWav(filename string, samples []byte) {
+func saveWav(filename string, samples []byte) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer f.Close()
 
@@ -134,8 +148,11 @@ func saveWav(filename string, samples []byte) {
 	header.ChunkSize = 36 + header.Subchunk2Size
 
 	// 写入文件头
-	binary.Write(f, binary.LittleEndian, &header)
+	if err := binary.Write(f, binary.LittleEndian, &header); err != nil {
+		return err
+	}
 
 	// 写入音频数据
-	f.Write(samples)
+	_, err = f.Write(samples)
+	return err
 }

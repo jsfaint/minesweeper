@@ -1,11 +1,10 @@
-package main
+package assets
 
 import (
 	"image"
 	"image/color"
 	"image/draw"
 	"image/png"
-	"log"
 	"os"
 )
 
@@ -13,21 +12,28 @@ const (
 	tileSize = 32
 )
 
-func main() {
+// GenerateImages 生成所有图片资源
+func GenerateImages() error {
 	// 创建目录
 	os.MkdirAll("assets/images", 0755)
 
-	// 生成未翻开的方块
-	generateTile()
-	// 生成已翻开的方块
-	generateRevealed()
-	// 生成地雷
-	generateMine()
-	// 生成旗帜
-	generateFlag()
+	// 生成所有图片
+	if err := generateTile(); err != nil {
+		return err
+	}
+	if err := generateRevealed(); err != nil {
+		return err
+	}
+	if err := generateMine(); err != nil {
+		return err
+	}
+	if err := generateFlag(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func generateTile() {
+func generateTile() error {
 	img := image.NewRGBA(image.Rect(0, 0, tileSize, tileSize))
 
 	// 填充浅灰色背景
@@ -50,20 +56,20 @@ func generateTile() {
 		img.Set(tileSize-1, i, darkColor) // 右边
 	}
 
-	saveImage(img, "assets/images/tile.png")
+	return saveImage(img, "assets/images/tile.png")
 }
 
-func generateRevealed() {
+func generateRevealed() error {
 	img := image.NewRGBA(image.Rect(0, 0, tileSize, tileSize))
 
 	// 填充深灰色背景
 	bgColor := color.RGBA{180, 180, 180, 255}
 	draw.Draw(img, img.Bounds(), &image.Uniform{bgColor}, image.Point{}, draw.Src)
 
-	saveImage(img, "assets/images/revealed.png")
+	return saveImage(img, "assets/images/revealed.png")
 }
 
-func generateMine() {
+func generateMine() error {
 	img := image.NewRGBA(image.Rect(0, 0, tileSize, tileSize))
 
 	// 填充深灰色背景
@@ -85,10 +91,10 @@ func generateMine() {
 		}
 	}
 
-	saveImage(img, "assets/images/mine.png")
+	return saveImage(img, "assets/images/mine.png")
 }
 
-func generateFlag() {
+func generateFlag() error {
 	img := image.NewRGBA(image.Rect(0, 0, tileSize, tileSize))
 
 	// 填充浅灰色背景
@@ -111,17 +117,15 @@ func generateFlag() {
 		}
 	}
 
-	saveImage(img, "assets/images/flag.png")
+	return saveImage(img, "assets/images/flag.png")
 }
 
-func saveImage(img *image.RGBA, filename string) {
+func saveImage(img *image.RGBA, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer f.Close()
 
-	if err := png.Encode(f, img); err != nil {
-		log.Fatal(err)
-	}
+	return png.Encode(f, img)
 }

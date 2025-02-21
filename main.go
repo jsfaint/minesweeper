@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	_ "github.com/ebitengine/hideconsole"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 

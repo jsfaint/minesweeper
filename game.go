@@ -53,20 +53,24 @@ var difficultySettings = map[Difficulty]DifficultyConfig{
 }
 
 type Game struct {
-	grid          [][]Cell
-	gameOver      bool
-	won           bool
-	difficulty    Difficulty
-	firstClick    bool
-	startTime     time.Time
-	elapsedTime   time.Duration
-	images        map[string]*ebiten.Image
-	currentScore  int
-	audioContext  *audio.Context
-	sounds        map[string]*audio.Player
-	restartBtn    *Button
-	difficultyBtn *Button
-	gameFont      font.Face
+	grid                  [][]Cell
+	gameOver              bool
+	won                   bool
+	difficulty            Difficulty
+	firstClick            bool
+	startTime             time.Time
+	elapsedTime           time.Duration
+	images                map[string]*ebiten.Image
+	currentScore          int
+	audioContext          *audio.Context
+	sounds                map[string]*audio.Player
+	restartBtn            *Button
+	difficultyBtn         *Button
+	gameFont              font.Face
+	difficultyButtons     []*Button
+	showingDifficultyMenu bool
+	gridWidth             int
+	gridHeight            int
 }
 
 // 添加按钮结构体
@@ -74,6 +78,7 @@ type Button struct {
 	X, Y, W, H int
 	Text       string
 	Hover      bool
+	Difficulty Difficulty
 }
 
 // 添加按钮点击检测方法
@@ -217,13 +222,56 @@ func NewGame(difficulty Difficulty) (*Game, error) {
 			W:    120,
 			H:    30,
 		},
+		gridWidth:             config.GridWidth,
+		gridHeight:            config.GridHeight,
+		showingDifficultyMenu: false,
 	}
 
 	for i := range g.grid {
 		g.grid[i] = make([]Cell, config.GridWidth)
 	}
 
+	// 初始化难度选择按钮
+	g.initDifficultyButtons()
+
 	return g, nil
+}
+
+func (g *Game) initDifficultyButtons() {
+	btnWidth := 150
+	btnHeight := 40
+	spacing := 20
+
+	// 计算起始Y坐标
+	startY := (g.gridHeight*cellSize)/2 - (3*btnHeight+2*spacing)/2
+	centerX := (g.gridWidth*cellSize - btnWidth) / 2
+
+	g.difficultyButtons = []*Button{
+		{
+			X:          centerX,
+			Y:          startY,
+			W:          btnWidth,
+			H:          btnHeight,
+			Text:       "简单模式",
+			Difficulty: Easy,
+		},
+		{
+			X:          centerX,
+			Y:          startY + btnHeight + spacing,
+			W:          btnWidth,
+			H:          btnHeight,
+			Text:       "中等模式",
+			Difficulty: Medium,
+		},
+		{
+			X:          centerX,
+			Y:          startY + 2*btnHeight + 2*spacing,
+			W:          btnWidth,
+			H:          btnHeight,
+			Text:       "困难模式",
+			Difficulty: Hard,
+		},
+	}
 }
 
 func (g *Game) placeMines() {
@@ -269,6 +317,45 @@ func (g *Game) calculateNeighbors() {
 func (g *Game) Update() error {
 	x, y := ebiten.CursorPosition()
 
+	if g.showingDifficultyMenu {
+		// 处理难度选择
+		for _, btn := range g.difficultyButtons {
+			btn.Hover = btn.Contains(x, y)
+			if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && btn.Contains(x, y) {
+				// 创建新游戏实例
+				newGame, err := NewGame(btn.Difficulty)
+				if err != nil {
+					return err
+				}
+
+				// 保留音频上下文
+				newGame.audioContext = g.audioContext
+				newGame.sounds = g.sounds
+
+				// 更新窗口尺寸
+				config := difficultySettings[btn.Difficulty]
+				windowWidth := config.GridWidth * cellSize
+				windowHeight := config.GridHeight*cellSize + 80
+				ebiten.SetWindowSize(windowWidth, windowHeight)
+
+				*g = *newGame
+				g.startTime = time.Now()
+				g.showingDifficultyMenu = false
+				g.firstClick = false
+				g.playSound("click")
+				// 完全重置地雷布局
+				for y := range g.grid {
+					for x := range g.grid[y] {
+						g.grid[y][x] = Cell{}
+					}
+				}
+				g.initializeGridSafely(-1, -1)
+				return nil
+			}
+		}
+		return nil
+	}
+
 	// 更新按钮悬停状态
 	g.restartBtn.Hover = g.restartBtn.Contains(x, y)
 	g.difficultyBtn.Hover = g.difficultyBtn.Contains(x, y)
@@ -289,25 +376,8 @@ func (g *Game) Update() error {
 				g.sounds = oldSounds
 				g.playSound("click")
 			} else if g.difficultyBtn.Contains(x, y) {
-				// 切换难度
-				newDifficulty := (g.difficulty + 1) % 3
-				newGame, err := NewGame(newDifficulty)
-				if err != nil {
-					return err
-				}
-				// 保留原有的音频上下文
-				oldContext := g.audioContext
-				oldSounds := g.sounds
-				*g = *newGame
-				g.audioContext = oldContext
-				g.sounds = oldSounds
+				g.showingDifficultyMenu = true
 				g.playSound("click")
-
-				// 根据新难度调整窗口大小
-				config := difficultySettings[newDifficulty]
-				windowWidth := config.GridWidth * cellSize
-				windowHeight := config.GridHeight*cellSize + 80 // 额外空间用于显示计时器等信息
-				ebiten.SetWindowSize(windowWidth, windowHeight)
 			}
 		}
 		return nil
@@ -359,6 +429,12 @@ func (g *Game) Update() error {
 	}
 
 	g.checkWin()
+
+	// 修改后的菜单显示条件
+	if g.firstClick && !g.showingDifficultyMenu && !g.gameOver && !g.won {
+		g.showingDifficultyMenu = true
+	}
+
 	return nil
 }
 
@@ -448,6 +524,18 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		g.drawButton(screen, g.restartBtn)
 		g.drawButton(screen, g.difficultyBtn)
 	}
+
+	if g.showingDifficultyMenu {
+		// 绘制半透明背景
+		overlay := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
+		overlay.Fill(color.RGBA{0, 0, 0, 200})
+		screen.DrawImage(overlay, nil)
+
+		// 绘制难度选择按钮
+		for _, btn := range g.difficultyButtons {
+			g.drawButton(screen, btn)
+		}
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -456,12 +544,16 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func (g *Game) checkWin() {
+	if g.firstClick {
+		return // 首次点击前不检查胜利条件
+	}
+
 	config := difficultySettings[g.difficulty]
 	won := true
 	for y := 0; y < config.GridHeight; y++ {
 		for x := 0; x < config.GridWidth; x++ {
 			cell := g.grid[y][x]
-			if !cell.hasMine && !cell.revealed {
+			if (!cell.hasMine && !cell.revealed) || (cell.hasMine && !cell.flagged && !cell.revealed) {
 				won = false
 				break
 			}

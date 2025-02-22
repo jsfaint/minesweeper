@@ -19,12 +19,12 @@ const (
 )
 
 func main() {
-	game, err := NewGame(Medium) // 默认中等难度
+	game, err := NewGame(Easy) // 默认中等难度
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	config := difficultySettings[Medium]
+	config := difficultySettings[Easy]
 	windowWidth := config.GridWidth * cellSize
 	windowHeight := config.GridHeight*cellSize + 80 // 增加底部空间
 

@@ -374,6 +374,12 @@ func (g *Game) Update() error {
 				*g = *newGame
 				g.audioContext = oldContext
 				g.sounds = oldSounds
+				// 重置关键游戏状态
+				g.startTime = time.Now()
+				g.elapsedTime = 0
+				g.gameOver = false
+				g.won = false
+				g.initializeGridSafely(-1, -1) // 重新生成地雷
 				g.playSound("click")
 			} else if g.difficultyBtn.Contains(x, y) {
 				g.showingDifficultyMenu = true

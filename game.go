@@ -124,7 +124,7 @@ func loadGameSounds(audioContext *audio.Context) (map[string]*audio.Player, erro
 			return nil, fmt.Errorf("解码音效失败 %s: %v", filename, err)
 		}
 
-		p, err := audio.NewPlayer(audioContext, d)
+		p, err := audioContext.NewPlayer(d)
 		if err != nil {
 			return nil, fmt.Errorf("创建播放器失败 %s: %v", filename, err)
 		}

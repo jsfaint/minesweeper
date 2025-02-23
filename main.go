@@ -30,7 +30,7 @@ func main() {
 
 	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("扫雷游戏")
-	ebiten.SetWindowResizable(true) // 允许调整窗口大小
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeType(1))
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

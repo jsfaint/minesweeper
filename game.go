@@ -521,9 +521,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 
 		// 使用更大的字体绘制消息
-		bounds := text.BoundString(g.gameFont, msg)
-		msgX := (config.GridWidth*cellSize - bounds.Dx()) / 2
-		msgY := config.GridHeight*cellSize/2 - bounds.Dy()/2
+		bounds, _ := font.BoundString(g.gameFont, msg)
+		width := (bounds.Max.X - bounds.Min.X).Ceil()
+		height := (bounds.Max.Y - bounds.Min.Y).Ceil()
+		msgX := (config.GridWidth*cellSize - width) / 2
+		msgY := config.GridHeight*cellSize/2 - height/2
 		text.Draw(screen, msg, g.gameFont, msgX, msgY, color.White)
 
 		// 绘制按钮
@@ -639,8 +641,10 @@ func (g *Game) drawButton(screen *ebiten.Image, btn *Button) {
 		float64(btn.W), float64(1), borderColor)
 
 	// 绘制按钮文字
-	bounds := text.BoundString(g.gameFont, btn.Text)
-	textX := btn.X + (btn.W-bounds.Dx())/2
-	textY := btn.Y + (btn.H+bounds.Dy())/2
+	bounds, _ := font.BoundString(g.gameFont, btn.Text)
+	textWidth := (bounds.Max.X - bounds.Min.X).Ceil()
+	textHeight := (bounds.Max.Y - bounds.Min.Y).Ceil()
+	textX := btn.X + (btn.W-textWidth)/2
+	textY := btn.Y + (btn.H+textHeight)/2
 	text.Draw(screen, btn.Text, g.gameFont, textX, textY, color.White)
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/font/opentype"
@@ -626,19 +627,26 @@ func (g *Game) drawButton(screen *ebiten.Image, btn *Button) {
 	if btn.Hover {
 		bgColor = color.RGBA{80, 80, 80, 255}
 	}
-	ebitenutil.DrawRect(screen, float64(btn.X), float64(btn.Y),
-		float64(btn.W), float64(btn.H), bgColor)
 
 	// 绘制按钮边框
 	borderColor := color.RGBA{120, 120, 120, 255}
-	ebitenutil.DrawRect(screen, float64(btn.X), float64(btn.Y),
-		float64(btn.W), float64(1), borderColor)
-	ebitenutil.DrawRect(screen, float64(btn.X), float64(btn.Y),
-		float64(1), float64(btn.H), borderColor)
-	ebitenutil.DrawRect(screen, float64(btn.X+btn.W-1), float64(btn.Y),
-		float64(1), float64(btn.H), borderColor)
-	ebitenutil.DrawRect(screen, float64(btn.X), float64(btn.Y+btn.H-1),
-		float64(btn.W), float64(1), borderColor)
+
+	vector.DrawFilledRect(
+		screen,
+		float32(btn.X), float32(btn.Y),
+		float32(btn.W), float32(btn.H),
+		bgColor,
+		false, // 关闭抗锯齿
+	)
+
+	vector.StrokeRect(
+		screen,
+		float32(btn.X), float32(btn.Y),
+		float32(btn.W), float32(btn.H),
+		1, // 边框线宽
+		borderColor,
+		false, // 关闭抗锯齿
+	)
 
 	// 绘制按钮文字
 	bounds, _ := font.BoundString(g.gameFont, btn.Text)
